@@ -1,4 +1,17 @@
 import React, { useState } from "react";
+import {
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Button,
+  TextField,
+  Paper,
+  TableContainer,
+  Typography,
+  Box,
+} from "@mui/material";
 
 const dummyData = {
   rows: [
@@ -87,56 +100,75 @@ function App() {
   const renderRows = (items: any[], level = 0) =>
     items.map((item) => (
       <React.Fragment key={item.id}>
-        <tr>
-          <td style={{ paddingLeft: `${level * 20}px` }}>{item.label}</td>
-          <td>{item.value}</td>
-          <td>
-            <input
+        <TableRow>
+          <TableCell style={{ paddingLeft: `${level * 20}px` }}>
+            {item.label}
+          </TableCell>
+          <TableCell>{item.value}</TableCell>
+          <TableCell>
+            <TextField
+              size="small"
               type="number"
               value={inputs[item.id] ?? ""}
               onChange={(e) =>
                 setInputs({ ...inputs, [item.id]: Number(e.target.value) })
               }
             />
-          </td>
-          <td>
-            <button onClick={() => handleAllocation(item, "percent")}>
-              button1
-            </button>
-          </td>
-          <td>
-            <button onClick={() => handleAllocation(item, "value")}>
-              button2
-            </button>
-          </td>
-          <td>
+          </TableCell>
+          <TableCell>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => handleAllocation(item, "percent")}
+            >
+              %
+            </Button>
+          </TableCell>
+          <TableCell>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => handleAllocation(item, "value")}
+            >
+              Val
+            </Button>
+          </TableCell>
+          <TableCell>
             {(
               ((item.value - item.originalValue) / item.originalValue) *
               100
             ).toFixed(2)}{" "}
             %
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
         {item.children && renderRows(item.children, level + 1)}
       </React.Fragment>
     ));
 
   return (
-    <div className="tableContainer">
-      <table border={1} cellPadding={5}>
-        <thead>
-          <tr>
-            <th>Label</th>
-            <th>Value</th>
-            <th>Input</th>
-            <th>Allocation %</th>
-            <th>Allocation Val</th>
-            <th>Variance %</th>
-          </tr>
-        </thead>
-        <tbody>{renderRows(tableData)}</tbody>
-      </table>
-    </div>
+    <Box
+      display={"flex"}
+      flexDirection={"column"}
+      gap={5}
+      alignItems={"center"}
+    >
+      <Typography variant="h3">Simple Hierarchical Table Website</Typography>
+      <TableContainer component={Paper} sx={{ backgroundColor: "lightgray" }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Label</TableCell>
+              <TableCell>Value</TableCell>
+              <TableCell>Input</TableCell>
+              <TableCell>Allocation %</TableCell>
+              <TableCell>Allocation Val</TableCell>
+              <TableCell>Variance %</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>{renderRows(tableData)}</TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 }
 
