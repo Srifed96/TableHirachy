@@ -1,19 +1,15 @@
 import React, { useState } from "react";
-import {
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Button,
-  TextField,
-  Paper,
-  TableContainer,
-  Typography,
-  Box,
-} from "@mui/material";
+import "..//App.css";
 
-const dummyData = {
+interface Item {
+  id: string;
+  label: string;
+  value: number;
+  originalValue: number;
+  children?: Item[];
+}
+
+const dummyData: { rows: Item[] } = {
   rows: [
     {
       id: "electronics",
@@ -21,18 +17,8 @@ const dummyData = {
       value: 1400,
       originalValue: 1400,
       children: [
-        {
-          id: "phones",
-          label: "Phones",
-          value: 800,
-          originalValue: 800,
-        },
-        {
-          id: "laptops",
-          label: "Laptops",
-          value: 700,
-          originalValue: 700,
-        },
+        { id: "phones", label: "Phones", value: 800, originalValue: 800 },
+        { id: "laptops", label: "Laptops", value: 700, originalValue: 700 },
       ],
     },
     {
@@ -41,27 +27,18 @@ const dummyData = {
       value: 1000,
       originalValue: 1000,
       children: [
-        {
-          id: "tables",
-          label: "Tables",
-          value: 300,
-          originalValue: 300,
-        },
-        {
-          id: "chairs",
-          label: "Chairs",
-          value: 700,
-          originalValue: 700,
-        },
+        { id: "tables", label: "Tables", value: 300, originalValue: 300 },
+        { id: "chairs", label: "Chairs", value: 700, originalValue: 700 },
       ],
     },
   ],
 };
 
-function App() {
-  const [tableData, setTableData] = useState<any>(dummyData.rows);
+const App: React.FC = () => {
+  const [tableData, setTableData] = useState<Item[]>(dummyData.rows);
   const [inputs, setInputs] = useState<Record<string, number>>({});
-  const recalcSubtotals = (items: any[]): number => {
+
+  const recalcSubtotals = (items: Item[]): number => {
     return items.reduce((sum, item) => {
       if (item.children) {
         item.value = recalcSubtotals(item.children);
@@ -70,7 +47,7 @@ function App() {
     }, 0);
   };
 
-  const updateValue = (items: any[], id: string, newValue: number): any[] => {
+  const updateValue = (items: Item[], id: string, newValue: number): Item[] => {
     return items.map((item) => {
       if (item.id === id) {
         return { ...item, value: newValue };
@@ -81,9 +58,9 @@ function App() {
     });
   };
 
-  const handleAllocation = (item: any, mode: "percent" | "value") => {
-    let input = inputs[item.id];
-    if (!input) return;
+  const handleAllocation = (item: Item, mode: "percent" | "value") => {
+    const input = inputs[item.id];
+    if (input === undefined || input === null || isNaN(input)) return;
 
     let newValue = item.value;
     if (mode === "percent") {
@@ -92,84 +69,61 @@ function App() {
       newValue = input;
     }
 
-    let updated = updateValue(tableData, item.id, newValue);
+    const updated = updateValue(tableData, item.id, newValue);
     recalcSubtotals(updated);
     setTableData([...updated]);
   };
 
-  const renderRows = (items: any[], level = 0) =>
-    items.map((item) => (
-      <React.Fragment key={item.id}>
-        <TableRow>
-          <TableCell style={{ paddingLeft: `${level * 20}px` }}>
-            {item.label}
-          </TableCell>
-          <TableCell>{item.value}</TableCell>
-          <TableCell>
-            <TextField
-              size="small"
-              type="number"
-              value={inputs[item.id] ?? ""}
-              onChange={(e) =>
-                setInputs({ ...inputs, [item.id]: Number(e.target.value) })
-              }
-            />
-          </TableCell>
-          <TableCell>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => handleAllocation(item, "percent")}
-            >
-              %
-            </Button>
-          </TableCell>
-          <TableCell>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => handleAllocation(item, "value")}
-            >
-              Val
-            </Button>
-          </TableCell>
-          <TableCell>
-            {(
-              ((item.value - item.originalValue) / item.originalValue) *
-              100
-            ).toFixed(2)}{" "}
-            %
-          </TableCell>
-        </TableRow>
-        {item.children && renderRows(item.children, level + 1)}
-      </React.Fragment>
-    ));
+  const renderRows = (items: Item[], level = 0): JSX.Element[] => {
+    return items.flatMap((item) => [
+      <tr key={item.id}>
+        <td style={{ paddingLeft: `${level * 20}px` }}>{item.label}</td>
+        <td>{item.value}</td>
+        <td>
+          <input
+            type="number"
+            value={inputs[item.id] ?? ""}
+            onChange={(e) =>
+              setInputs({ ...inputs, [item.id]: Number(e.target.value) })
+            }
+          />
+        </td>
+        <td>
+          <button onClick={() => handleAllocation(item, "percent")}>%</button>
+        </td>
+        <td>
+          <button onClick={() => handleAllocation(item, "value")}>Val</button>
+        </td>
+        <td>
+          {(
+            ((item.value - item.originalValue) / item.originalValue) *
+            100
+          ).toFixed(2)}{" "}
+          %
+        </td>
+      </tr>,
+      ...(item.children ? renderRows(item.children, level + 1) : []),
+    ]);
+  };
 
   return (
-    <Box
-      display={"flex"}
-      flexDirection={"column"}
-      gap={5}
-      alignItems={"center"}
-    >
-      <Typography variant="h3">Simple Hierarchical Table Website</Typography>
-      <TableContainer component={Paper} sx={{ backgroundColor: "lightgray" }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Label</TableCell>
-              <TableCell>Value</TableCell>
-              <TableCell>Input</TableCell>
-              <TableCell>Allocation %</TableCell>
-              <TableCell>Allocation Val</TableCell>
-              <TableCell>Variance %</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>{renderRows(tableData)}</TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
+    <div className="app-container">
+      <h2>Simple Hierarchical Table Website</h2>
+      <table className="custom-table">
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th>Value</th>
+            <th>Input</th>
+            <th>Allocation %</th>
+            <th>Allocation Val</th>
+            <th>Variance %</th>
+          </tr>
+        </thead>
+        <tbody>{renderRows(tableData)}</tbody>
+      </table>
+    </div>
   );
-}
+};
 
 export default App;
